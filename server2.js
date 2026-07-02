@@ -1,3 +1,4 @@
+// 1. 가장 먼저 환경변수 장부를 로드하여 모든 비공개 키가 인식되도록 조치합니다.
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -241,7 +242,6 @@ app.post('/api/generate-lyrics', apiLimiter, async (req, res) => {
         }
 
         const ai = new GoogleGenerativeAI(GEMINI_API_KEY);
-        // ⭐ 구글의 최신 표준 저지연 모델 'gemini-2.5-flash-lite'로 세대교체를 완료하여 404 에러를 원천 해결합니다.
         const model = ai.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
         let generatedLyrics = "";

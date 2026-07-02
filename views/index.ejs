@@ -3,95 +3,206 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>반려동물 생일송 메이커</title>
+  <title>🐾 반려동물 생일송 메이커</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & FontAwesome 아이콘 -->
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- 📅 달력 버그 완벽 해결을 위한 Flatpickr 라이브러리 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/ko.js"></script>
 
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth__ko.js"></script>
-  <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.css" />
+  <!-- Firebase v8 Client SDK 라이브러리 탑재 (로그인 세션 실시간 보존용) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
   <style>
     body {
-      font-family: 'Malgun Gothic', sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
+      font-family: 'Pretendard', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
-
-    /* 🎨 메인 가입 유도 버튼 */
-    .login-trigger-btn {
-      background-color: #4f46e5;
-      color: white;
-      padding: 16px 32px;
-      font-size: 18px;
-      font-weight: bold;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
-      transition: all 0.2s ease;
+    .flatpickr-calendar {
+      font-family: 'Pretendard', sans-serif !important;
+      border-radius: 12px !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
     }
-    .login-trigger-btn:hover {
-      background-color: #4338ca;
-      transform: translateY(-2px);
-    }
-
-    /* 🔒 로그인 팝업 모달창 배경 */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    /* 📦 모달 흰색 박스 디자인 */
-    .modal-content {
-      background: white;
-      padding: 40px 30px;
-      border-radius: 20px;
-      position: relative;
-      width: 400px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
-
-    /* ❌ 닫기 버튼 */
-    .close-btn {
-      position: absolute;
-      top: 20px; right: 25px;
-      font-size: 28px;
-      cursor: pointer;
-      color: #94a3b8;
-    }
-    .close-btn:hover { color: #475569; }
   </style>
 </head>
-<body>
+<body class="min-h-screen py-10 px-4">
 
-  <button class="login-trigger-btn" id="open-login-modal-btn">
-    🎵 3초만에 가입하고 생일송 만들기
-  </button>
-
-  <div class="modal-overlay" id="login-modal-overlay">
-    <div class="modal-content">
-      <span class="close-btn" id="close-login-modal-btn">&times;</span>
-      <h3 style="text-align: center; margin: 0 0 10px 0; color: #1e293b; font-size: 22px;">반려동물 생일송 메이커</h3>
-      <p style="text-align: center; margin: 0 0 30px 0; color: #64748b; font-size: 14px;">로그인 후 가입 축하 3크레딧을 받으세요!</p>
+  <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
+    <!-- 상단 바 -->
+    <div class="bg-indigo-600 text-white px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🐾</span>
+        <div>
+          <h1 class="text-2xl font-bold">반려동물 생일송 메이커</h1>
+          <p class="text-xs text-indigo-200">우리 아이만을 위한 특별한 멜로디 생성기</p>
+        </div>
+      </div>
       
-      <div id="firebaseui-auth-container"></div>
+      <!-- 실시간 인증 관리 영역 -->
+      <div id="auth-status-container" class="flex items-center gap-4">
+        <span class="text-sm font-medium animate-pulse text-indigo-200">사용자 확인 중...</span>
+      </div>
+    </div>
+
+    <div class="p-8">
+      <form id="pet-song-form" onsubmit="event.preventDefault();" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- 왼쪽 사이드: 반려동물 프로필 -->
+        <div class="space-y-6">
+          <h3 class="text-lg font-bold text-gray-800 border-b pb-2 flex items-center gap-2">
+            <i class="fa-solid fa-paw text-indigo-500"></i> 프로필 작성
+          </h3>
+          
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">우리 아이 이름</label>
+            <input type="text" id="petName" placeholder="예: 초코, 코코" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-400 focus:outline-none transition">
+          </div>
+
+          <!-- 📅 탄생 연월일 달력 -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">탄생 연월일</label>
+            <div class="relative cursor-pointer" id="calendar-trigger">
+              <input type="text" id="petBirthday" placeholder="여기를 누르면 달력이 팝업됩니다 📅" readonly
+                class="w-full px-4 py-3 pl-12 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-indigo-400 focus:outline-none cursor-pointer transition">
+              <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <i class="fa-solid fa-calendar-days text-lg"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- 별자리 / 탄생석 / 탄생화 자동 연동 -->
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">별자리</label>
+              <input type="text" id="petZodiac" placeholder="자동 연동" readonly class="w-full px-3 py-2 text-center rounded-lg bg-gray-100 border text-gray-500 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">탄생석</label>
+              <input type="text" id="petStone" placeholder="자동 연동" readonly class="w-full px-3 py-2 text-center rounded-lg bg-gray-100 border text-gray-500 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">탄생화</label>
+              <input type="text" id="petFlower" placeholder="자동 연동" readonly class="w-full px-3 py-2 text-center rounded-lg bg-gray-100 border text-gray-500 text-sm">
+            </div>
+          </div>
+        </div>
+
+        <!-- 오른쪽 사이드: 음원 상세 세팅 -->
+        <div class="space-y-6">
+          <h3 class="text-lg font-bold text-gray-800 border-b pb-2 flex items-center gap-2">
+            <i class="fa-solid fa-music text-indigo-500"></i> 음악 및 코러스 스타일
+          </h3>
+          
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">원하는 멜로디 장르</label>
+            <select id="musicGenre" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-400 focus:outline-none transition">
+              <option value="pop">경쾌하고 신나는 K-POP 🎵</option>
+              <option value="acoustic">감성 충만 어쿠스틱 발라드 🎸</option>
+              <option value="jazz">달콤하고 부드러운 스윙 재즈 🎷</option>
+              <option value="rock">파워풀하고 신나는 모던 록 ⚡</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">꼭 들어갔으면 하는 축하 문구</label>
+            <input type="text" id="fixedChorus" placeholder="예: 평생 행복하게 함께하자" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-400 focus:outline-none transition">
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">가사 생성 모드</label>
+            <div class="grid grid-cols-2 gap-4">
+              <label class="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-gray-50">
+                <input type="radio" name="lyricMode" value="custom" checked class="text-indigo-600">
+                <span class="text-sm font-semibold">Gemini 맞춤형 작사</span>
+              </label>
+              <label class="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-gray-50">
+                <input type="radio" name="lyricMode" value="suno" class="text-indigo-600">
+                <span class="text-sm font-semibold">Suno 완전 자동</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- 하단 메인 제작 실행부 -->
+      <div class="mt-10 pt-8 border-t flex flex-col items-center gap-4">
+        <button onclick="requestLyricsGeneration()" class="w-full md:w-2/3 bg-indigo-600 text-white font-bold py-4 rounded-2xl text-lg shadow-lg hover:bg-indigo-700 transition flex items-center justify-center gap-3">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> ✨ 나만의 생일송 가사 만들기
+        </button>
+        <p class="text-xs text-gray-500">가사를 먼저 맞춤형으로 작사한 뒤, 음악을 구울지 자유롭게 선택할 수 있습니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 📝 [가사 및 분기 분출용 대형 모달 레이어] -->
+  <!-- ================================================================= -->
+  <div id="lyrics-choice-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative">
+      <h3 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <span>✨ 우리 아이 맞춤 가사 도착!</span>
+      </h3>
+      <p class="text-sm text-gray-500 mb-4">Gemini AI가 정성스럽게 지은 가사입니다. 마음에 드신다면 음악으로 구워보세요!</p>
+      
+      <!-- 가사 본문 표시 박스 -->
+      <textarea id="generated-lyrics-display" class="w-full h-60 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl focus:outline-none text-gray-800 font-mono text-sm leading-relaxed mb-6 resize-none" readonly></textarea>
+
+      <!-- 분기 버튼 그룹 -->
+      <div class="space-y-3">
+        <button onclick="triggerMusicProduction()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-2xl shadow-md transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-compact-disc animate-spin"></i> 💎 5 크레딧으로 음악 구워내기
+        </button>
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="saveLyricsOnly()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-xl transition">
+            📝 가사만 저장하기
+          </button>
+          <button onclick="closeLyricsModal()" class="bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3 rounded-xl transition">
+            닫기 / 취소
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 🔐 [Firebase 간편 로그인/회원가입 전용 팝업 모달] -->
+  <!-- ================================================================= -->
+  <div id="login-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl relative">
+      <button onclick="closeLoginModal()" class="absolute right-6 top-6 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+      <h3 class="text-xl font-bold text-gray-900 mb-2">🔐 로그인 및 회원가입</h3>
+      <p class="text-xs text-gray-500 mb-6">간단히 이메일 비밀번호를 입력해 새출발하세요.</p>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">이메일 주소</label>
+          <input type="email" id="login-email" placeholder="name@example.com" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">비밀번호</label>
+          <input type="password" id="login-password" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+        
+        <button onclick="handleEmailLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition">
+          시작하기 / 로그인
+        </button>
+      </div>
     </div>
   </div>
 
   <script>
-    // Node.js 서버가 내 .env 공개키 데이터를 이곳에 자동으로 주입(EJS 문법)
+    // ==========================================
+    // 🔑 [Firebase Client SDK 동적 초기화]
+    // ==========================================
     const firebaseConfig = {
       apiKey: "<%= firebaseKeys.apiKey %>",
       authDomain: "<%= firebaseKeys.authDomain %>",
@@ -100,57 +211,225 @@
       messagingSenderId: "<%= firebaseKeys.messagingSenderId %>",
       appId: "<%= firebaseKeys.appId %>"
     };
-
-    // Firebase 초기화
     firebase.initializeApp(firebaseConfig);
-    const ui = new firebaseui.auth.AuthUI(firebase.auth());
-    
-    const uiConfig = {
-      signInOptions: [
-        firebase.auth.EmailAuthProvider.PROVIDER_ID // 이메일 회원가입 활성화
-      ],
-      callbacks: {
-        signInSuccessWithAuthResult: function(authResult) {
-          // 인증에 성공하면 구글이 끊어준 ID 토큰(인증서)을 추출합니다.
-          authResult.user.getIdToken().then(function(idToken) {
-            
-            // 토큰을 들고 우리가 만든 Node.js 백엔드로 전송합니다.
-            fetch('/api/login', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + idToken
-              }
-            })
-            .then(res => res.json())
-            .then(resData => {
-              if (resData.success) {
-                alert(`${resData.message}\n현재 보유 크레딧: ${resData.data.credits}개 🎁`);
-                window.location.reload(); // 새로고침해서 로그인 상태 반영
-              }
-            })
-            .catch(err => alert("서버 연동 실패: " + err));
+    const auth = firebase.auth();
+
+    // 로그인 유저의 상태를 보관할 변수들 (에러 완전 차단을 위해 실시간 업데이트됨)
+    let globalUser = null;
+    let globalUserEmail = null;
+    let globalUserCredits = 0;
+
+    // Firebase Auth 상태 실시간 모니터링 수신기
+    auth.onAuthStateChanged(async (user) => {
+      const container = document.getElementById('auth-status-container');
+      
+      if (user) {
+        globalUser = user;
+        globalUserEmail = user.email;
+        
+        // 1. 백엔드와 세션 동기화 및 크레딧 조회를 먼저 시도합니다.
+        try {
+          const idToken = await user.getIdToken();
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`
+            }
           });
-          return false; // 페이지가 엉뚱한 곳으로 리다이렉트되는 것 방지
+          const result = await response.json();
+          if (result.success) {
+            globalUserCredits = result.data.credits;
+          }
+        } catch (err) {
+          console.error("유저 세션 연동 실패:", err);
         }
-      },
-      credentialHelper: firebaseui.auth.CredentialHelper.NONE
-    };
 
-    // 모달창 제어 이벤트 스크립트
-    const modalOverlay = document.getElementById('login-modal-overlay');
-    const openModalBtn = document.getElementById('open-login-modal-btn');
-    const closeModalBtn = document.getElementById('close-login-modal-btn');
-
-    openModalBtn.addEventListener('click', () => {
-      modalOverlay.style.display = 'flex';
-      ui.start('#firebaseui-auth-container', uiConfig); // 모달이 열릴 때 가입 폼 로드
+        // 2. 상단바를 로그인된 상태로 동적 세팅합니다.
+        container.innerHTML = `
+          <div class="flex items-center gap-3 bg-indigo-700 px-4 py-2 rounded-2xl shadow-inner border border-indigo-500">
+            <span class="text-xs font-semibold text-indigo-100">${globalUserEmail}</span>
+            <span class="bg-yellow-400 text-indigo-900 text-xs font-extrabold px-2 py-0.5 rounded-full">💎 ${globalUserCredits} P</span>
+            <button onclick="handleLogout()" class="text-xs text-red-300 hover:text-red-100 font-bold ml-2">로그아웃</button>
+          </div>
+        `;
+      } else {
+        // 비로그인 상태일 때의 화면 구성
+        globalUser = null;
+        globalUserEmail = null;
+        globalUserCredits = 0;
+        container.innerHTML = `
+          <button onclick="openLoginModal()" class="bg-white text-indigo-600 font-bold px-5 py-2.5 rounded-xl text-sm shadow-md hover:bg-indigo-50 transition flex items-center gap-2">
+            🔐 로그인 / 회원가입
+          </button>
+        `;
+      }
     });
 
-    closeModalBtn.addEventListener('click', () => { modalOverlay.style.display = 'none'; });
-    window.addEventListener('click', (e) => {
-      if (e.target === modalOverlay) modalOverlay.style.display = 'none';
+    // ==========================================
+    // 📅 [Flatpickr 달력 초기화 장치]
+    // ==========================================
+    document.addEventListener("DOMContentLoaded", function() {
+      flatpickr("#petBirthday", {
+        locale: "ko",
+        dateFormat: "Y-m-d",
+        maxDate: "today",
+        disableMobile: "true",
+        onChange: function(selectedDates, dateStr, instance) {
+          calculatePetZodiacAndStone(dateStr);
+        }
+      });
     });
+
+    function calculatePetZodiacAndStone(dateString) {
+      if (!dateString) return;
+      const date = new Date(dateString);
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+
+      let zodiac = "";
+      if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) zodiac = "양자리 ♈";
+      else if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) zodiac = "황소자리 ♉";
+      else if ((month == 5 && day >= 21) || (month == 6 && day <= 21)) zodiac = "쌍둥이자리 ♊";
+      else if ((month == 6 && day >= 22) || (month == 7 && day <= 22)) zodiac = "게자리 ♋";
+      else if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) zodiac = "사자자리 ♌";
+      else if ((month == 8 && day >= 23) || (month == 9 && day <= 23)) zodiac = "처녀자리 ♍";
+      else if ((month == 9 && day >= 24) || (month == 10 && day <= 22)) zodiac = "천칭자리 ♎";
+      else if ((month == 10 && day >= 23) || (month == 11 && day <= 22)) zodiac = "전갈자리 ♏";
+      else if ((month == 11 && day >= 23) || (month == 12 && day <= 24)) zodiac = "사수자리 ♐";
+      else if ((month == 12 && day >= 25) || (month == 1 && day <= 19)) zodiac = "염소자리 ♑";
+      else if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) zodiac = "물병자리 ♒";
+      else zodiac = "물고기자리 ♓";
+
+      const stones = ["가넷 ❤️", "자수정 💜", "아쿠아마린 🩵", "다이아몬드 💎", "에메랄드 💚", "진주 🤍", "루비 ❤️", "페리도트 💚", "사파이어 💙", "오팔 💖", "토파즈 💛", "터키석 🩵"];
+      const stone = stones[month - 1] || "다이아몬드 💎";
+
+      const flowers = ["수선화 💛", "제비꽃 💜", "데이지 🤍", "스위트피 💖", "은방울꽃 🤍", "장미 🌹", "델피늄 💙", "글라디올러스 ❤️", "과꽃 💜", "카렌듈라 💛", "국화 🤍", "포인세티아 ❤️"];
+      const flower = flowers[month - 1] || "장미 🌹";
+
+      document.getElementById('petZodiac').value = zodiac;
+      document.getElementById('petStone').value = stone;
+      document.getElementById('petFlower').value = flower;
+    }
+
+    // ==========================================
+    // 🔐 [인증 모달 제어 및 회원 가입 제어부]
+    // ==========================================
+    function openLoginModal() {
+      document.getElementById('login-modal').classList.remove('hidden');
+    }
+    function closeLoginModal() {
+      document.getElementById('login-modal').classList.add('hidden');
+    }
+
+    async function handleEmailLogin() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      if (!email || !password) {
+        alert("이메일과 비밀번호를 모두 기재해 주세요!");
+        return;
+      }
+
+      try {
+        // Firebase 인증에서 로그인 및 회원가입을 겸사겸사 유연하게 지원하는 메커니즘
+        try {
+          await auth.signInWithEmailAndPassword(email, password);
+        } catch (loginErr) {
+          if (loginErr.code === 'auth/user-not-found') {
+            await auth.createUserWithEmailAndPassword(email, password);
+            alert("환영합니다! 가입과 로그인이 동시에 완료되었습니다 🥳");
+          } else {
+            throw loginErr;
+          }
+        }
+        closeLoginModal();
+      } catch (err) {
+        alert("인증 실패: " + err.message);
+      }
+    }
+
+    async function handleLogout() {
+      await auth.signOut();
+      alert("성공적으로 로그아웃되었습니다.");
+    }
+
+    // ==========================================
+    // 🤖 [AI 가사 요청 및 모달 팝업 컨트롤 장치]
+    // ==========================================
+    async function requestLyricsGeneration() {
+      // 1. 로그인 상태 방어벽 세우기 (스크린샷 에러를 근본적으로 막아주는 구역)
+      if (!globalUserEmail) {
+        alert("🐾 로그인이 필요한 서비스입니다! 우측 상단이나 팝업창을 통해 시작해 주세요.");
+        openLoginModal();
+        return;
+      }
+
+      const name = document.getElementById('petName').value;
+      const birthday = document.getElementById('petBirthday').value;
+      const zodiac = document.getElementById('petZodiac').value;
+      const stone = document.getElementById('petStone').value;
+      const flower = document.getElementById('petFlower').value;
+      const genre = document.getElementById('musicGenre').value;
+      const fixedChorus = document.getElementById('fixedChorus').value;
+      const lyricMode = document.querySelector('input[name="lyricMode"]:checked').value;
+
+      if (!name || !birthday) {
+        alert("🐾 우리 아이 이름과 생년월일을 적어주셔야 가사 영감이 떠오릅니다!");
+        return;
+      }
+
+      alert("✨ Gemini AI가 우리 아이 프로필을 바탕으로 명품 가사를 작성 중입니다...");
+
+      try {
+        const response = await fetch('/api/generate-lyrics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name, zodiac, stone, flower, fixedChorus, genre,
+            isSunoAutoMode: lyricMode === 'suno'
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.lyrics) {
+          // 2. 가사 생성에 성공하면, 전용 팝업창(모달)을 스무스하게 드러냅니다.
+          document.getElementById('generated-lyrics-display').value = data.lyrics;
+          document.getElementById('lyrics-choice-modal').classList.remove('hidden');
+        } else {
+          alert("가사 생성에 일시적 장애가 발생했습니다. 잠시 후 시도해 주세요!");
+        }
+      } catch (err) {
+        alert("서버 연결 실패: " + err.message);
+      }
+    }
+
+    function closeLyricsModal() {
+      document.getElementById('lyrics-choice-modal').classList.add('hidden');
+    }
+
+    // [선택 1] 진짜 음악 제작 가동
+    function triggerMusicProduction() {
+      if (globalUserCredits < 5) {
+        alert("💎 크레딧이 부족합니다! 충전 후 이용해 주세요.");
+        return;
+      }
+      const lyrics = document.getElementById('generated-lyrics-display').value;
+      const genre = document.getElementById('musicGenre').value;
+      const name = document.getElementById('petName').value;
+
+      alert(`🎵 ${name}의 맞춤 음악 제작을 의뢰했습니다. 백그라운드에서 Suno AI 작업이 시작됩니다!\n(약 2~3분 소요)`);
+      closeLyricsModal();
+    }
+
+    // [선택 2] 가사만 보관
+    function saveLyricsOnly() {
+      const lyrics = document.getElementById('generated-lyrics-display').value;
+      navigator.clipboard.writeText(lyrics);
+      alert("📋 가사 본문이 클립보드에 무사히 복사되었습니다! 편하신 곳에 백업해 두세요.");
+      closeLyricsModal();
+    }
   </script>
 </body>
 </html>

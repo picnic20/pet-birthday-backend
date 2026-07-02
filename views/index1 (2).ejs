@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>반려동물 생일송 메이커</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth__ko.js"></script>
+  <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.css" />
+
+  <style>
+    body {
+      font-family: 'Malgun Gothic', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    /* 🎨 메인 가입 유도 버튼 */
+    .login-trigger-btn {
+      background-color: #4f46e5;
+      color: white;
+      padding: 16px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+      transition: all 0.2s ease;
+    }
+    .login-trigger-btn:hover {
+      background-color: #4338ca;
+      transform: translateY(-2px);
+    }
+
+    /* 🔒 로그인 팝업 모달창 배경 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    /* 📦 모달 흰색 박스 디자인 */
+    .modal-content {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 20px;
+      position: relative;
+      width: 400px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* ❌ 닫기 버튼 */
+    .close-btn {
+      position: absolute;
+      top: 20px; right: 25px;
+      font-size: 28px;
+      cursor: pointer;
+      color: #94a3b8;
+    }
+    .close-btn:hover { color: #475569; }
+  </style>
+</head>
+<body>
+
+  <button class="login-trigger-btn" id="open-login-modal-btn">
+    🎵 3초만에 가입하고 생일송 만들기
+  </button>
+
+  <div class="modal-overlay" id="login-modal-overlay">
+    <div class="modal-content">
+      <span class="close-btn" id="close-login-modal-btn">&times;</span>
+      <h3 style="text-align: center; margin: 0 0 10px 0; color: #1e293b; font-size: 22px;">반려동물 생일송 메이커</h3>
+      <p style="text-align: center; margin: 0 0 30px 0; color: #64748b; font-size: 14px;">로그인 후 가입 축하 3크레딧을 받으세요!</p>
+      
+      <div id="firebaseui-auth-container"></div>
+    </div>
+  </div>
+
+  <script>
+    // Node.js 서버가 내 .env 공개키 데이터를 이곳에 자동으로 주입(EJS 문법)
+    const firebaseConfig = {
+      apiKey: "<%= firebaseKeys.apiKey %>",
+      authDomain: "<%= firebaseKeys.authDomain %>",
+      projectId: "<%= firebaseKeys.projectId %>",
+      storageBucket: "<%= firebaseKeys.storageBucket %>",
+      messagingSenderId: "<%= firebaseKeys.messagingSenderId %>",
+      appId: "<%= firebaseKeys.appId %>"
+    };
+
+    // Firebase 초기화
+    firebase.initializeApp(firebaseConfig);
+    const ui = new firebaseui.auth.AuthUI(firebase.auth());
+    
+    const uiConfig = {
+      signInOptions: [
+        firebase.auth.EmailAuthProvider.PROVIDER_ID // 이메일 회원가입 활성화
+      ],
+      callbacks: {
+        signInSuccessWithAuthResult: function(authResult) {
+          // 인증에 성공하면 구글이 끊어준 ID 토큰(인증서)을 추출합니다.
+          authResult.user.getIdToken().then(function(idToken) {
+            
+            // 토큰을 들고 우리가 만든 Node.js 백엔드로 전송합니다.
+            fetch('/api/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + idToken
+              }
+            })
+            .then(res => res.json())
+            .then(resData => {
+              if (resData.success) {
+                alert(`${resData.message}\n현재 보유 크레딧: ${resData.data.credits}개 🎁`);
+                window.location.reload(); // 새로고침해서 로그인 상태 반영
+              }
+            })
+            .catch(err => alert("서버 연동 실패: " + err));
+          });
+          return false; // 페이지가 엉뚱한 곳으로 리다이렉트되는 것 방지
+        }
+      },
+      credentialHelper: firebaseui.auth.CredentialHelper.NONE
+    };
+
+    // 모달창 제어 이벤트 스크립트
+    const modalOverlay = document.getElementById('login-modal-overlay');
+    const openModalBtn = document.getElementById('open-login-modal-btn');
+    const closeModalBtn = document.getElementById('close-login-modal-btn');
+
+    openModalBtn.addEventListener('click', () => {
+      modalOverlay.style.display = 'flex';
+      ui.start('#firebaseui-auth-container', uiConfig); // 모달이 열릴 때 가입 폼 로드
+    });
+
+    closeModalBtn.addEventListener('click', () => { modalOverlay.style.display = 'none'; });
+    window.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) modalOverlay.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
