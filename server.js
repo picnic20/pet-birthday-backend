@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
+const router = express.Router();
 import cors from 'cors';
 import mongoose from 'mongoose';
 import path from 'path';
@@ -102,6 +103,25 @@ app.get('/', (req, res) => {
   res.render('index', { firebaseKeys });
 });
 
+// 1. 프론트엔드가 처음 요청을 보낸 주소 (카카오 로그인 페이지로 리다이렉트)
+router.get('/auth/kakao', (req, res) => {
+    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${process.env.KAKAO_REST_API_KEY}&redirect_uri=${process.env.KAKAO_REDIRECT_URI}&response_type=code`;
+    res.redirect(kakaoAuthUrl);
+});
+
+// 2. 카카오가 인증 완료 후 인가 코드(Code)를 보내줄 Callback 주소
+router.get('/auth/kakao/callback', async (req, res) => {
+    const { code } = req.query;
+    // 이 인가 코드로 카카오 토큰을 요청하고, 사용자 정보를 가져오는 로직 구현
+    try {
+        // 토큰 요청 및 로그인/회원가입 처리...
+        res.status(200).json({ success: true, message: "로그인 성공" });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+module.exports = router;
 // =================================================================
 // 🔑 [API] 회원가입 및 로그인 처리 문지기
 // =================================================================
