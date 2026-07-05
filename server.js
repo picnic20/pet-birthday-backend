@@ -105,7 +105,7 @@ app.get('/', (req, res) => {
 
 // 1. 프론트엔드가 처음 요청을 보낸 주소 (카카오 로그인 페이지로 리다이렉트)
 router.get('/auth/kakao', (req, res) => {
-    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${process.env.KAKAO_REST_API_KEY}&redirect_uri=${process.env.KAKAO_REDIRECT_URI}&response_type=code`;
+    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${process.env.KAKAO_REST_API_KEY}&redirect_uri=${process.env.KAKAO_REDIRECT_URI}&prompt=none`;
     res.redirect(kakaoAuthUrl);
 });
 
